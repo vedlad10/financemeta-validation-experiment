@@ -1,0 +1,38 @@
+{
+  "manifest_version": 1,
+  "hash_algorithm": "SHA-256",
+  "note": "This manifest intentionally excludes its own hash. The immutable Git commit identifies the complete frozen tree.",
+  "primary_hashes": {
+    "environment": {
+      "path": "environment.json",
+      "sha256": "9cef3b420b421ff75163a99e2dfab4dfedfbcdeb586253277d85caa286cde467"
+    },
+    "data": {
+      "path": "data/aapl_yahoo_chart.json",
+      "sha256": "5d7b5348b28e6fab88d19f3e135910eeb6256ab3981242ece079e2dfc366067d"
+    },
+    "config": {
+      "path": "config.json",
+      "sha256": "da8dee3d99d9179164a67e031f3b4715cc275081f64a42a2464b9af4b1cdedde"
+    }
+  },
+  "files": {
+    "PAPERS.md": "d7849ca438bc55399e5971292f0ac9d0214d58d483057f36beb2effdd5671e53",
+    "PREREGISTRATION.md": "4d233fc11b39ce0eeaeacac7ca1aec392ff18c11b402e9b7ead7fd95617c2f84",
+    "README.md": "4eb0d83ea9e05ef0bc9c06c1551b04025e59d6708b5ef81d7de99af25559c62d",
+    "RESULTS.md": "69d8cbcf4eb38744e87dfe1216c785df8f7d27dc4e723443ffbb202c2bec7aa7",
+    "RYAN_UPDATE.md": "e4d016d69b6a8e5c491019291e271a3f44a6df2d9a312491ccd4bbcc8a8b004a",
+    "SPEC.md": "8e0aa3e593119a032f8cab09566ed369c36843f438ef3e06f44e77f5fce626e8",
+    "config.json": "da8dee3d99d9179164a67e031f3b4715cc275081f64a42a2464b9af4b1cdedde",
+    "data/aapl_yahoo_chart.json": "5d7b5348b28e6fab88d19f3e135910eeb6256ab3981242ece079e2dfc366067d",
+    "environment.json": "9cef3b420b421ff75163a99e2dfab4dfedfbcdeb586253277d85caa286cde467",
+    "experiment.py": "b079d3781f471d420772deddb5b5d9784d9de92bead8fc20a1a12ef24c92ccb4",
+    "requirements.txt": "39f584d79bf27061891ca0d48a674d4608a821df1c94af37099f2ffa0f8bf431",
+    "results/comparison.png": "e92fb6af468feeabf93db7e0222b538b3d0bb435700951a1e1af7152ad18b2d5",
+    "results/fold_boundaries.csv": "aa3fc95bca7e0d688dee17544d4b91e9afd8babc336965d72f575546e6fff565",
+    "results/lockbox_predictions.csv": "6fb5bdc3edfb5656de748d0632af63a17edf01cad3408d43183e089e31f78874",
+    "results/summary.json": "8a21d80cd0d460c6c231ce257a188c6005a612ca9834765b38931a4d7bb661b1",
+    "results/validation_scores.csv": "6ddb48c97b2ffdeb9bb13bc13434e8e30f0e10e3a97fbf46a60eedff1827a0d6",
+    "test_protocol.py": "934f442342369469f12a1f94b200d9f287ae0ffb6ce337868bcbeaa603de868d"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "python": "3.11.0",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "packages": {
+    "matplotlib": "3.10.9",
+    "numpy": "2.4.0",
+    "pandas": "2.3.3",
+    "scikit-learn": "1.8.0"
+  }
+}

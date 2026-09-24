@@ -1,0 +1,32 @@
+{
+  "symbol": "AAPL.US",
+  "start_date": "2010-01-01",
+  "end_date": "2025-12-31",
+  "development_end": "2023-12-31",
+  "lockbox_start": "2024-01-01",
+  "target": "next_day_log_close_return",
+  "feature_columns": [
+    "ret_1",
+    "ret_2",
+    "ret_3",
+    "ret_5",
+    "ret_10",
+    "ret_20",
+    "volatility_5",
+    "volatility_20",
+    "intraday_range",
+    "overnight_return",
+    "volume_z20"
+  ],
+  "model": "standard_scaler_plus_ridge",
+  "ridge_alphas": [0.1, 1.0, 10.0, 100.0],
+  "random_folds": 5,
+  "walk_forward_folds": 5,
+  "walk_forward_initial_fraction": 0.5,
+  "purge_rows": 1,
+  "embargo_rows": 1,
+  "random_seed": 20260924,
+  "primary_metric": "zero_benchmark_oos_r2",
+  "minimum_effect": 0.002,
+  "one_way_transaction_cost_bps": 5.0
+}

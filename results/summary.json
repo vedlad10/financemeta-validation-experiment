@@ -1,0 +1,63 @@
+{
+  "status": "empirical_result",
+  "config_sha256": "da8dee3d99d9179164a67e031f3b4715cc275081f64a42a2464b9af4b1cdedde",
+  "data": {
+    "kind": "market",
+    "provider": "Yahoo Finance chart endpoint",
+    "url": "https://query1.finance.yahoo.com/v8/finance/chart/AAPL?period1=1262304000&period2=1767225600&interval=1d&events=history&includeAdjustedClose=true",
+    "cache": "data\\aapl_yahoo_chart.json",
+    "sha256": "5d7b5348b28e6fab88d19f3e135910eeb6256ab3981242ece079e2dfc366067d"
+  },
+  "sample": {
+    "development_rows": 3502,
+    "development_start": "2010-02-02",
+    "development_end": "2023-12-29",
+    "lockbox_rows": 501,
+    "lockbox_start": "2024-01-02",
+    "lockbox_end": "2025-12-30"
+  },
+  "schemes": {
+    "random": {
+      "selected_alpha": 100.0,
+      "validation_mean_fold_oos_r2": -0.012780705218574485,
+      "validation_pooled_oos_r2": -0.01178121431839596,
+      "lockbox": {
+        "oos_r2": -0.00770336475874811,
+        "rmse": 0.01750657753221976,
+        "information_coefficient": -0.019318949790515457,
+        "sign_accuracy": 0.5169660678642715,
+        "net_sharpe_5bps": -0.0549918330403098
+      },
+      "validation_optimism": -0.0050773404598263745
+    },
+    "purged_walk_forward": {
+      "selected_alpha": 100.0,
+      "validation_mean_fold_oos_r2": -0.004346964522558605,
+      "validation_pooled_oos_r2": -0.008369369357692502,
+      "lockbox": {
+        "oos_r2": -0.007527246789994502,
+        "rmse": 0.01750504763874645,
+        "information_coefficient": -0.017540241328207168,
+        "sign_accuracy": 0.5169660678642715,
+        "net_sharpe_5bps": 0.45220750929885184
+      },
+      "validation_optimism": 0.0031802822674358968
+    }
+  },
+  "decision_rule": {
+    "minimum_effect": 0.002,
+    "condition_a_random_minus_safe_validation": -0.008433740696015879,
+    "condition_a_pass": false,
+    "condition_b_random_minus_safe_optimism": -0.00825762272726227,
+    "condition_b_pass": false,
+    "hypothesis_supported": false,
+    "conclusion": "The predeclared hypothesis failed; preserve this result without retuning."
+  },
+  "environment": {
+    "python": "3.11.0",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "numpy": "2.4.0",
+    "pandas": "2.3.3",
+    "scikit_learn": "1.8.0"
+  }
+}
