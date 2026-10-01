@@ -1,0 +1,57 @@
+supervised rows in cache      : 4003
+development rows by label_date: 4003 (preregistered expectation 4003)
+development feature dates     : 2010-02-02 to 2025-12-30
+development label dates       : 2010-02-03 to 2025-12-31
+
+fold 1: validation 2018-01-12 to 2019-08-16 (401 rows)
+   pass  ordered: max train label_date < min validation feature_date
+   pass  ordered: max train feature_date < min validation feature_date
+   pass  ordered: no training row inside the validation block
+   pass  ordered: exactly the declared training size
+   pass  random: no training row inside the validation block
+   pass  random: purge rows before the block excluded
+   pass  random: embargo rows after the block excluded
+   note  random arm draws 887 of 2000 training rows from after the validation block begins; this is the protocol difference under test
+
+fold 2: validation 2019-08-19 to 2021-03-22 (401 rows)
+   pass  ordered: max train label_date < min validation feature_date
+   pass  ordered: max train feature_date < min validation feature_date
+   pass  ordered: no training row inside the validation block
+   pass  ordered: exactly the declared training size
+   pass  random: no training row inside the validation block
+   pass  random: purge rows before the block excluded
+   pass  random: embargo rows after the block excluded
+   note  random arm draws 654 of 2000 training rows from after the validation block begins; this is the protocol difference under test
+
+fold 3: validation 2021-03-23 to 2022-10-20 (400 rows)
+   pass  ordered: max train label_date < min validation feature_date
+   pass  ordered: max train feature_date < min validation feature_date
+   pass  ordered: no training row inside the validation block
+   pass  ordered: exactly the declared training size
+   pass  random: no training row inside the validation block
+   pass  random: purge rows before the block excluded
+   pass  random: embargo rows after the block excluded
+   note  random arm draws 434 of 2000 training rows from after the validation block begins; this is the protocol difference under test
+
+fold 4: validation 2022-10-21 to 2024-05-24 (400 rows)
+   pass  ordered: max train label_date < min validation feature_date
+   pass  ordered: max train feature_date < min validation feature_date
+   pass  ordered: no training row inside the validation block
+   pass  ordered: exactly the declared training size
+   pass  random: no training row inside the validation block
+   pass  random: purge rows before the block excluded
+   pass  random: embargo rows after the block excluded
+   note  random arm draws 214 of 2000 training rows from after the validation block begins; this is the protocol difference under test
+
+fold 5: validation 2024-05-28 to 2025-12-30 (400 rows)
+   pass  ordered: max train label_date < min validation feature_date
+   pass  ordered: max train feature_date < min validation feature_date
+   pass  ordered: no training row inside the validation block
+   pass  ordered: exactly the declared training size
+   pass  random: no training row inside the validation block
+   pass  random: purge rows before the block excluded
+   pass  random: embargo rows after the block excluded
+   note  random arm draws 0 of 2000 training rows from after the validation block begins; this is the protocol difference under test
+
+All boundary invariants hold
+No model was fitted and no score was computed by this script.
