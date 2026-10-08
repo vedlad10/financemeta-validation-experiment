@@ -87,8 +87,8 @@ The asymmetry is deliberate and follows from §3: before the block the only leak
 
 ## 6. Refit cadence
 
-- **Per fold:** each (arm, alpha) pipeline is refitted once at each of the five origins, on that fold's training rows only. Ten fits per alpha, forty fits per arm across the grid. No pipeline is carried across folds.
-- **Once before lockbox:** after `delta` is computed and stored, each arm's selected pipeline is refitted on the complete 4,003-row development sample, minus the single purge row adjacent to the lockbox for the ordered arm.
+- **Per fold:** each (arm, alpha) pipeline is refitted once at each of the five origins, on that fold's training rows only. Five fits per (arm, alpha) pair; **20 fits per arm** across the four-alpha grid; **40 total** before the two final refits. No pipeline is carried across folds.
+- **Once before lockbox:** after `delta` is computed and stored, each arm's selected pipeline is refitted on the complete development sample. The ordered arm excludes the single purge row adjacent to the lockbox (training on 4,002 rows); the random arm trains on all 4,003 rows. This asymmetry arises because the ordered arm must maintain `max(train_label_date) < min(lockbox_feature_date)`, whereas the random arm has no temporal ordering to protect. The reviewer should confirm this is acceptable, or decide that both arms purge identically (see `PROTOCOL_DIFF.md` §5.4).
 - Nothing is refitted after any lockbox number is seen.
 
 ## 7. Primary metric and selection
@@ -130,9 +130,10 @@ If, after the authorized download, the development sample is not 4,003 rows, or 
 
 ## 12. Known properties a reviewer should weigh
 
-1. **The treatment intensity is not constant across folds.** The number of training rows drawn from after the validation block falls fold by fold: 887, 654, 434, 214, 0. By fold 5 the two arms differ only in ordering, not in look-ahead, because the block ends at the development boundary. The pooled `delta` therefore averages five different treatment strengths. **Per-fold delta will be reported alongside the pooled statistic** as a diagnostic, without changing the primary rule.
+1. **The treatment intensity is not constant across folds.** The number of training rows drawn from after the validation block falls fold by fold: 887, 654, 434, 214, 0. By fold 5 the two arms draw zero future rows because the block ends at the development boundary. However, **fold 5 is not a pure ordering-only control**. Even with zero future rows, the random arm samples 2,000 rows from the entire pre-block span (feature dates 2010-02-03 through 2024-05-23), while the ordered arm takes the 2,000 most recent rows (2016-06-14 through 2024-05-23). In the index check the two arms share approximately 1,111 of 2,000 rows; the remaining ~889 rows differ. The random arm includes older data (2010–2016) that is absent from the ordered window, introducing a **training-composition confound**: any score difference in fold 5 comes from training on different market regimes (recency vs breadth), not from look-ahead. The pooled `delta` therefore averages five different treatment strengths, the last of which is zero look-ahead but non-zero composition difference. **Per-fold delta will be reported alongside the pooled statistic** as a diagnostic, without changing the primary rule.
 2. **Fold 1 has zero slack.** Its ordered window begins at development row 0: 2,000 training rows plus 1 purge row exactly consume everything before the first block. One missing bar at the start makes fold 1 infeasible, which is a design fragility rather than a bug. Two mitigations are available if the reviewer prefers: reduce the per-fold training size to 1,900 (leaving ~100 rows of slack) or anchor the blocks by date instead of by row count. **Neither is adopted unilaterally**, because both change the preregistered design.
 3. **Planning used the experiment-1 cache**, which ends 2025-12-31 and covers the whole development span. The lockbox calendar is unverified until the single authorized download.
+4. **Embargo label-price overlap.** The 20-row embargo protects against features reaching back into the validation window, but the last validation label uses `Close[b+1]` (where `b` is the last validation feature index). The first admitted post-embargo row at `b+21` has `ret_20 = log(Close[b+21] / Close[b+1])`, which shares `Close[b+1]` with the last validation target. The current exclusion covers validation features but not validation labels. A 21-row embargo (`lookback + label_horizon = 20 + 1`) would remove this overlap. This is a review decision (see `PROTOCOL_DIFF.md` §5.3).
 
 ## 13. What is verified as of this commit
 
@@ -149,3 +150,24 @@ The script fits no model and computes no score. `fold_plan_audit.txt` is its out
 ## 14. Authorization gate
 
 On written authorization from the review route, and not before: download the 2026 lockbox once, record its hashes, run the five folds for both arms across the grid, store fold membership and all alpha-level validation predictions, compute `delta`, apply §10, then evaluate the lockbox exactly once.
+
+## 15. Provider cache preservation
+
+The experiment-1 cache (`data/aapl_yahoo_chart.json`, SHA-256 `5d7b5348b28e6fab88d19f3e135910eeb6256ab3981242ece079e2dfc366067d`) covers 2010-01-01 through 2025-12-31 and is preserved unchanged. The 2026 lockbox download:
+
+1. is stored as a separate file (e.g., `data/aapl_yahoo_chart_2026.json`), not overwriting the existing cache;
+2. has its URL, retrieval timestamp, byte length, and SHA-256 recorded before any fitting;
+3. is compared against the experiment-1 cache for overlapping dates — if any historical adjusted close differs by more than `1e-6` relative, this is flagged and recorded as a provider revision before fitting, not silently accepted.
+
+This protects against retroactive historical-price revisions changing the development sample after the protocol and fold plan were verified.
+
+## 16. Inference limits
+
+The experiment uses:
+
+- **one asset** (AAPL common stock) — the result cannot generalize to other equities, higher-frequency data, cross-sectional panels, or longer label horizons;
+- **one model family** (Ridge regression) — more adaptive model searches may behave differently under temporal disorder;
+- **one sampling seed per fold** (`SeedSequence([20260926, k])`) — a different seed produces a different random draw and potentially a different delta; the single-seed design provides no uncertainty interval around the observed delta;
+- **one effect threshold** (0.002) — this is a pre-specified practical-significance boundary, not a statistical significance test; no p-value or confidence interval is computed.
+
+The `.002` threshold tells the reader whether the observed gap exceeds a pre-committed minimum, but it does not quantify sampling variability. These limits must be stated in the final write-up and cannot be resolved by the experiment design itself.

@@ -137,7 +137,7 @@ def describe(dev: pd.DataFrame, protocol: str, fold: int, train: np.ndarray,
         "validation_label_min": v.label_date.min().date(),
         "validation_label_max": v.label_date.max().date(),
         "training_rows_after_validation_start": later,
-        "membership_sha256": hashlib.sha256(train.tobytes()).hexdigest()[:16],
+        "membership_sha256": hashlib.sha256(train.tobytes()).hexdigest(),
     }
 
 
@@ -146,6 +146,21 @@ def main() -> int:
     dev = development(rows)
     blocks = validation_blocks(dev)
     plan, audit, failures = [], [], 0
+
+    # Frozen feature-file hash check (Point 5 of methods review)
+    # Normalize CRLF → LF before hashing: the manifest hash was computed with
+    # LF endings, but Windows git checkout may convert to CRLF.
+    experiment_py = ROOT / "experiment.py"
+    expected_experiment_hash = "b079d3781f471d420772deddb5b5d9784d9de92bead8fc20a1a12ef24c92ccb4"
+    raw_bytes = experiment_py.read_bytes()
+    canonical_bytes = raw_bytes.replace(b"\r\n", b"\n")
+    actual_experiment_hash = hashlib.sha256(canonical_bytes).hexdigest()
+    if actual_experiment_hash != expected_experiment_hash:
+        raise SystemExit(
+            f"experiment.py hash mismatch: expected {expected_experiment_hash}, "
+            f"got {actual_experiment_hash}. The frozen feature code has been modified."
+        )
+    audit.append(f"experiment.py SHA-256: {actual_experiment_hash} (matches frozen reference)")
 
     audit.append(f"supervised rows in cache      : {len(rows)}")
     audit.append(f"development rows by label_date: {len(dev)} "
@@ -190,7 +205,49 @@ def main() -> int:
         after = int((dev.iloc[rnd].feature_date > v.feature_date.min()).sum())
         audit.append(f"   note  random arm draws {after} of {len(rnd)} training rows from after the "
                      f"validation block begins; this is the protocol difference under test")
+        # Fold 5 overlap count for the composition-confound note
+        overlap = len(set(ordered.tolist()) & set(rnd.tolist()))
+        audit.append(f"   note  ordered and random arms share {overlap} of {len(rnd)} training rows")
         audit.append("")
+
+    # Exact expected-date assertions (Point 5 of methods review)
+    EXPECTED_DATES = {
+        1: {"val_feat_min": "2018-01-12", "val_feat_max": "2019-08-16",
+            "ord_feat_min": "2010-02-02", "ord_feat_max": "2018-01-10",
+            "ord_label_max": "2018-01-11"},
+        2: {"val_feat_min": "2019-08-19", "val_feat_max": "2021-03-22",
+            "ord_feat_min": "2011-09-02", "ord_feat_max": "2019-08-15",
+            "ord_label_max": "2019-08-16"},
+        3: {"val_feat_min": "2021-03-23", "val_feat_max": "2022-10-20",
+            "ord_feat_min": "2013-04-11", "ord_feat_max": "2021-03-19",
+            "ord_label_max": "2021-03-22"},
+        4: {"val_feat_min": "2022-10-21", "val_feat_max": "2024-05-24",
+            "ord_feat_min": "2014-11-10", "ord_feat_max": "2022-10-19",
+            "ord_label_max": "2022-10-20"},
+        5: {"val_feat_min": "2024-05-28", "val_feat_max": "2025-12-30",
+            "ord_feat_min": "2016-06-14", "ord_feat_max": "2024-05-23",
+            "ord_label_max": "2024-05-24"},
+    }
+    for fold_num, block in enumerate(blocks, start=1):
+        exp = EXPECTED_DATES[fold_num]
+        ordered = ordered_window(dev, block)
+        o, v = dev.iloc[ordered], dev.iloc[block]
+        date_checks = [
+            (f"fold {fold_num} val feat min",
+             str(v.feature_date.min().date()), exp["val_feat_min"]),
+            (f"fold {fold_num} val feat max",
+             str(v.feature_date.max().date()), exp["val_feat_max"]),
+            (f"fold {fold_num} ord feat min",
+             str(o.feature_date.min().date()), exp["ord_feat_min"]),
+            (f"fold {fold_num} ord feat max",
+             str(o.feature_date.max().date()), exp["ord_feat_max"]),
+            (f"fold {fold_num} ord label max",
+             str(o.label_date.max().date()), exp["ord_label_max"]),
+        ]
+        for label, actual, expected in date_checks:
+            if actual != expected:
+                failures += 1
+                audit.append(f"FAIL  {label}: expected {expected}, got {actual}")
 
     frame = pd.DataFrame(plan)
     frame.to_csv(HERE / "fold_plan.csv", index=False)

@@ -17,8 +17,8 @@ Nothing in `ec6c0df` is edited. The frozen experiment and its results stand as p
 | 4 | **Embargo = 1 row** after each validation block, applied only to the safe arm. | **Embargo = 20 rows** after the block in the random arm, with the reason stated: 20 is the longest feature lookback. Purge stays 1, the label horizon. | The frozen value was explicitly "conservative in a forward-only design… fixed to make the boundary rule explicit". Once rows after the block become eligible, 1 row is too few: a row 5 days later still has features reaching across the block. |
 | 5 | **Membership implied by row position.** | **Membership by `label_date`**, with `label_date` read from the trading calendar (§2). | A row whose features sit in 2025 but whose label lands in 2026 belongs to the lockbox. The calendar rule also prevents the off-by-one that drops the last development row. |
 | 6 | **Refit cadence not stated separately.** | **Stated:** once per fold at each origin, plus one final refit before the lockbox (§6). | Requested explicitly for review. |
-| 7 | **Primary metric pooled, selection also pooled** (same in both). | **Unchanged**, and now stated once and used everywhere: alpha selection, comparison, threshold (§7). | Prevents selecting on mean-fold R² while reporting pooled, or vice versa. |
-| 8 | **Decision rule has two conditions** (validation gap ≥ 0.002 **and** optimism gap ≥ 0.002). | **One condition:** `delta >= 0.002` on the pooled primary statistic (§10). | The second condition needed the lockbox to decide the primary claim, which puts a lockbox number inside the primary decision. Experiment 2 decides on validation alone and uses the lockbox only as a one-shot report. |
+| 7 | **Alpha selected on mean-fold R²** (`choose_alpha` sorts by `mean_fold_oos_r2`); primary comparison reported on pooled R². | **Substantive change:** alpha selection switches from mean-fold R² to pooled R², matching the reporting and threshold metric. One statistic is now used everywhere: selection, comparison, threshold (§7). | The frozen reference selected on mean-fold R² but reported pooled R², a split that could pick a different alpha than the one the primary statistic would prefer. Experiment 2 eliminates that split. This is a design improvement, not a neutral inheritance. |
+| 8 | **Decision rule has two conditions** (validation gap ≥ 0.002 **and** optimism gap ≥ 0.002). | **One condition:** `delta >= 0.002` on the pooled primary statistic (§10). See §3 below for the scope discrepancy this introduces. | The second condition needed the lockbox to decide the primary claim, which puts a lockbox number inside the primary decision. Experiment 2 decides on validation alone and uses the lockbox only as a one-shot report. |
 | 9 | **Transaction costs** described as a context diagnostic. | **Unchanged in substance**, restated as explicitly secondary and non-rescuing (§8). | — |
 | 10 | **Seed** `20260924`, one global seed. | Base seed `20260926`, plus `SeedSequence([seed, fold])` per fold (§9). | Per-fold streams keep folds independent and reproducible one at a time. |
 | 11 | Lockbox 2024-01-01 → 2025-12-31. | Lockbox 2026-01-02 → 2026-08-31; the old lockbox period is now inside development. | The frozen lockbox has been read; it cannot serve as a lockbox again. |
@@ -33,7 +33,23 @@ Nothing in `ec6c0df` is edited. The frozen experiment and its results stand as p
 - The transaction-cost level, 5 bps per one-way unit of turnover, secondary only.
 - The no-retuning rule and the negative-result reporting rules.
 
-## 3. Files
+## 3. Scope discrepancy relative to the original question
+
+The experiment-1 question (September 28 `SPEC.md`, frozen at `ec6c0df`) asked a **forward-only predictive-signal** question with a two-part rule: (a) the random validation score exceeds the safe validation score by at least 0.002, **and** (b) random validation optimism (validation R² minus lockbox R²) exceeds safe validation optimism by at least 0.002. Condition (b) places a lockbox number inside the primary decision, making it a combined validation-plus-lockbox question.
+
+Experiment 2 drops condition (b) entirely. The successor question is narrower: it tests only the **validation-score gap** between size-matched arms, using `delta >= 0.002` on pooled validation R² alone. The lockbox is evaluated once as a report, not as a decision input.
+
+This is a **scope discrepancy**, not a silent substitution. The two questions are related but not identical:
+
+| | Experiment 1 | Experiment 2 |
+|---|---|---|
+| Primary claim | random splitting is optimistically biased (validation + lockbox) | random training is optimistic in validation alone |
+| Lockbox role | inside the primary decision (condition b) | one-shot report, cannot change the conclusion |
+| Conditions | two (both must hold) | one |
+
+The discrepancy is flagged here for review. The reviewer should confirm that the narrower question is the intended scope before authorization, rather than discovering the change implicitly.
+
+## 4. Files
 
 | File | Role |
 |---|---|
@@ -44,8 +60,11 @@ Nothing in `ec6c0df` is edited. The frozen experiment and its results stand as p
 | `fold_plan_audit.txt` | the invariant checks, verbatim output |
 | `PROTOCOL_DIFF.md` | this file |
 
-## 4. Open points for the methods reviewer
+## 5. Open points for the methods reviewer
 
 1. **Fold 1 has zero slack** (`PROTOCOL.md` §12.2). Keep 2,000 training rows, or drop to 1,900 for a margin? Changing it alters the preregistered design, so it needs a decision rather than a default.
 2. **Treatment intensity decays across folds** (887 → 654 → 434 → 214 → 0 rows drawn from after the block). Fold 5 contributes a zero-treatment comparison to a pooled statistic meant to measure the treatment. Options: keep pooled as primary and report per-fold delta as a diagnostic (current choice), or drop fold 5 from the primary pool (a design change, not adopted unilaterally).
-3. **Embargo length.** 20 rows follows from the longest feature lookback. If the reviewer prefers the stricter `lookback + label horizon = 21`, that is a one-line change and should be settled before authorization.
+3. **Embargo length and validation-label overlap.** The current 20-row embargo excludes rows whose features reach back into the validation window (20 = longest feature lookback). However, the last validation target uses `Close[b+1]`, where `b` is the last validation feature index. The first admitted post-embargo row is at `b+21`; its `ret_20 = log(Close[b+21] / Close[b+1])` still shares the price `Close[b+1]` with the last validation label. The current exclusion therefore covers validation **features** but not validation **labels**. A 21-row embargo (`lookback + label_horizon = 20 + 1`) would eliminate this overlap. This is recorded as a review decision: the reviewer should choose 20 or 21 before authorization. Neither value is adopted unilaterally.
+4. **Unequal final-refit purge.** Before the lockbox evaluation, the ordered arm's final refit excludes the single purge row adjacent to the lockbox (training on 4,002 development rows), while the random arm trains on all 4,003 rows. The asymmetry arises because the ordered arm must maintain its temporal-integrity invariant (`max(train_label_date) < min(lockbox_feature_date)`), whereas the random arm has no temporal ordering to protect. The consequence is a one-row training-size difference in the final refit. The reviewer should confirm this asymmetry is acceptable, or decide that both arms should purge identically for comparability.
+5. **Provider cache preservation.** The experiment-1 cache (`data/aapl_yahoo_chart.json`, SHA-256 `5d7b5348b28e6fab88d19f3e135910eeb6256ab3981242ece079e2dfc366067d`) covers 2010-01-01 through 2025-12-31. When the 2026 lockbox is downloaded, Yahoo may return revised historical prices that differ from the cached values for overlapping dates. The protocol must: (a) preserve the existing cache file unchanged, (b) store the new download as a separate file (e.g., `data/aapl_yahoo_chart_2026.json`), (c) compare historical prices for overlapping dates and flag any discrepancy before fitting, rather than silently accepting revised data.
+6. **Inference limits.** The experiment tests one asset (AAPL), one model family (Ridge), one sampling seed per fold (`SeedSequence([20260926, k])`), and one effect threshold (0.002). The `.002` threshold is a pre-specified practical-significance boundary, not a statistical significance test. No p-value, confidence interval, or uncertainty band is computed for the observed delta. A different seed could produce a different draw and a different delta. The result cannot generalize to other equities, frequencies, cross-sectional panels, longer label horizons, or more adaptive model searches. These limits should be stated explicitly in the final write-up.
