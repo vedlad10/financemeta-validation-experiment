@@ -17,8 +17,8 @@ Nothing in `ec6c0df` is edited. The frozen experiment and its results stand as p
 | 4 | **Embargo = 1 row** after each validation block, applied only to the safe arm. | **Embargo = 20 rows** after the block in the random arm, with the reason stated: 20 is the longest feature lookback. Purge stays 1, the label horizon. | The frozen value was explicitly "conservative in a forward-only design… fixed to make the boundary rule explicit". Once rows after the block become eligible, 1 row is too few: a row 5 days later still has features reaching across the block. |
 | 5 | **Membership implied by row position.** | **Membership by `label_date`**, with `label_date` read from the trading calendar (§2). | A row whose features sit in 2025 but whose label lands in 2026 belongs to the lockbox. The calendar rule also prevents the off-by-one that drops the last development row. |
 | 6 | **Refit cadence not stated separately.** | **Stated:** once per fold at each origin, plus one final refit before the lockbox (§6). | Requested explicitly for review. |
-| 7 | **Alpha selected on mean-fold R²** (`choose_alpha` sorts by `mean_fold_oos_r2`); primary comparison reported on pooled R². | **Substantive change:** alpha selection switches from mean-fold R² to pooled R², matching the reporting and threshold metric. One statistic is now used everywhere: selection, comparison, threshold (§7). | The frozen reference selected on mean-fold R² but reported pooled R², a split that could pick a different alpha than the one the primary statistic would prefer. Experiment 2 eliminates that split. This is a design improvement, not a neutral inheritance. |
-| 8 | **Decision rule has two conditions** (validation gap ≥ 0.002 **and** optimism gap ≥ 0.002). | **One condition:** `delta >= 0.002` on the pooled primary statistic (§10). See §3 below for the scope discrepancy this introduces. | The second condition needed the lockbox to decide the primary claim, which puts a lockbox number inside the primary decision. Experiment 2 decides on validation alone and uses the lockbox only as a one-shot report. |
+| 7 | **Alpha selection and decision rule used mean-fold R²** (both `choose_alpha` and `run` show this). | **Substantive change:** selection and decision switch from mean-fold R² to pooled R². One statistic is now used everywhere: selection, comparison, threshold (§7). | The frozen reference selected and decided on mean-fold R² but reported pooled R², a split that could pick a different alpha than the one the primary statistic would prefer. Experiment 2 eliminates that split. This is a substantive design improvement, not a neutral inheritance. |
+| 8 | **Decision rule has two conditions** (validation gap ≥ 0.002 **and** optimism gap ≥ 0.002). | **One condition:** `delta >= 0.002` on the pooled primary statistic (§10). See §3 below for the three distinct formulations. | The second condition needed the lockbox to decide the primary claim, which puts a lockbox number inside the primary decision. Experiment 2 decides on validation alone and uses the lockbox only as a one-shot report. |
 | 9 | **Transaction costs** described as a context diagnostic. | **Unchanged in substance**, restated as explicitly secondary and non-rescuing (§8). | — |
 | 10 | **Seed** `20260924`, one global seed. | Base seed `20260926`, plus `SeedSequence([seed, fold])` per fold (§9). | Per-fold streams keep folds independent and reproducible one at a time. |
 | 11 | Lockbox 2024-01-01 → 2025-12-31. | Lockbox 2026-01-02 → 2026-08-31; the old lockbox period is now inside development. | The frozen lockbox has been read; it cannot serve as a lockbox again. |
@@ -33,21 +33,17 @@ Nothing in `ec6c0df` is edited. The frozen experiment and its results stand as p
 - The transaction-cost level, 5 bps per one-way unit of turnover, secondary only.
 - The no-retuning rule and the negative-result reporting rules.
 
-## 3. Scope discrepancy relative to the original question
+## 3. Lineage and scope discrepancy
 
-The experiment-1 question (September 28 `SPEC.md`, frozen at `ec6c0df`) asked a **forward-only predictive-signal** question with a two-part rule: (a) the random validation score exceeds the safe validation score by at least 0.002, **and** (b) random validation optimism (validation R² minus lockbox R²) exceeds safe validation optimism by at least 0.002. Condition (b) places a lockbox number inside the primary decision, making it a combined validation-plus-lockbox question.
+The protocol has three distinct formulations, not two. The current proposal is a narrower third formulation:
 
-Experiment 2 drops condition (b) entirely. The successor question is narrower: it tests only the **validation-score gap** between size-matched arms, using `delta >= 0.002` on pooled validation R² alone. The lockbox is evaluated once as a report, not as a decision input.
+1. **The frozen study (Experiment 1, `ec6c0df`):** Tested a two-part **random-versus-safe optimism claim**. The rule required (a) random validation > safe validation by 0.002, **and** (b) random validation optimism (validation − lockbox) > safe validation optimism by 0.002. This placed a lockbox number inside the primary decision, making it a combined validation-plus-lockbox claim. (Additionally, the decision rule and alpha selection both used mean-fold R²).
+2. **The September 28 correction request:** Asked for a **forward-only predictive-signal successor**, abandoning the lockbox-optimism condition but remaining focused on predictive signal.
+3. **This proposed successor (Experiment 2):** Tests only the **validation-score-gap endpoint** (`delta >= 0.002` on pooled validation R²). The lockbox is evaluated once as a report, not as a decision input.
 
-This is a **scope discrepancy**, not a silent substitution. The two questions are related but not identical:
+This is a **scope discrepancy**. The proposed validation-score-gap endpoint (3) is a narrower formulation than the forward-only predictive-signal request (2), which itself abandoned the two-part claim of the frozen study (1). 
 
-| | Experiment 1 | Experiment 2 |
-|---|---|---|
-| Primary claim | random splitting is optimistically biased (validation + lockbox) | random training is optimistic in validation alone |
-| Lockbox role | inside the primary decision (condition b) | one-shot report, cannot change the conclusion |
-| Conditions | two (both must hold) | one |
-
-The discrepancy is flagged here for review. The reviewer should confirm that the narrower question is the intended scope before authorization, rather than discovering the change implicitly.
+The lineage is flagged here for review. The reviewer should confirm that the narrower validation-score-gap question is the intended scope before authorization, rather than treating the question as unchanged.
 
 ## 4. Files
 
