@@ -25,10 +25,10 @@ Nothing in `ec6c0df` is edited. The frozen experiment and its results stand as p
 
 ## 2. What deliberately did not change
 
-- The question, asset and target.
+- The asset (AAPL) and target (next-day log close return). The question and primary decision rule changed; the three formulations and pending scope decision are recorded in §3.
 - All eleven features and the preprocessing, inherited by importing `make_dataset` from the frozen `experiment.py` rather than restating it.
 - Model family `StandardScaler -> Ridge` and the grid `{0.1, 1.0, 10.0, 100.0}`.
-- The primary metric, pooled zero-benchmark OOS R².
+- The zero-return benchmark and OOS R² metric family. Alpha selection and the primary decision change from mean-fold to pooled R² as recorded in row 7; this aggregation change remains part of the proposed successor design.
 - The effect threshold, 0.002.
 - The transaction-cost level, 5 bps per one-way unit of turnover, secondary only.
 - The no-retuning rule and the negative-result reporting rules.
